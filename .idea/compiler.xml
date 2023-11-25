@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="service-donation" />
+        <module name="service-organization" />
+        <module name="service-gateway" />
+        <module name="service-user" />
+        <module name="service-method-payment" />
+        <module name="service-admin" />
+        <module name="service-cause" />
+        <module name="service-activity" />
+        <module name="service-auth" />
+        <module name="service-mail" />
+        <module name="service-registry" />
+        <module name="service-testimony" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="organization" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="organization" options="-parameters" />
+      <module name="service-activity" options="-parameters" />
+      <module name="service-admin" options="-parameters" />
+      <module name="service-auth" options="-parameters" />
+      <module name="service-cause" options="-parameters" />
+      <module name="service-donation" options="-parameters" />
+      <module name="service-gateway" options="-parameters" />
+      <module name="service-mail" options="-parameters" />
+      <module name="service-method-payment" options="-parameters" />
+      <module name="service-organization" options="-parameters" />
+      <module name="service-registry" options="-parameters" />
+      <module name="service-testimony" options="-parameters" />
+      <module name="service-user" options="-parameters" />
+    </option>
+  </component>
+</project>

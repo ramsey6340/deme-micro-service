@@ -1,0 +1,68 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: service-auth
+          uri: lb://service-auth
+          predicates:
+            - Path=/service-auth/**
+          filters:
+            - RewritePath=/service-auth, /api/v1/auth
+
+        - id: service-user
+          uri: lb://service-user
+          predicates:
+            - Path=/service-user/**
+          filters:
+            - RewritePath=/service-user, /api/v1/users
+
+        - id: service-method-payment
+          uri: lb://service-method-payment
+          predicates:
+            - Path=/service-method-payment/**
+          filters:
+            - RewritePath=/service-method-payment, /api/v1/methodPayments
+
+        - id: service-cause
+          uri: lb://service-cause
+          predicates:
+            - Path=/service-cause/**
+          filters:
+            - RewritePath=/service-cause, /api/v1/causes
+
+        - id: service-admin
+          uri: lb://service-admin
+          predicates:
+            - Path=/service-admin/**
+          filters:
+            - RewritePath=/service-admin, /api/v1/admins
+
+        - id: service-organization
+          uri: lb://service-organization
+          predicates:
+            - Path=/service-organization/**
+          filters:
+            - RewritePath=/service-organization, /api/v1/organizations
+
+        - id: service-activity
+          uri: lb://service-activity
+          predicates:
+            - Path=/service-activity/**
+          filters:
+            - RewritePath=/service-activity, /api/v1/activities
+
+        - id: service-testimony
+          uri: lb://service-testimony
+          predicates:
+            - Path=/service-testimony/**
+          filters:
+            - RewritePath=/service-testimony, /api/v1/testimonies
+
+        - id: service-donation
+          uri: lb://service-donation
+          predicates:
+            - Path=/service-donation/**
+          filters:
+            - RewritePath=/service-donation, /api/v1/donations
+
+
