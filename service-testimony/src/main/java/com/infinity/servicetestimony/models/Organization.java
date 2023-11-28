@@ -35,7 +35,7 @@ public class Organization {
 
     private String creationDate = LocalDate.now().toString(); // Date de création du compte de l'utilisateur
 
-    private boolean delete; // Permet de savoir si l'organisation est supprimé ou pas
+    private boolean deleted; // Permet de savoir si l'organisation est supprimé ou pas
 
     private List<String> preferredPaymentMethods = new ArrayList<>(); // Liste des moyens de paiement préférés de l'organisation
 

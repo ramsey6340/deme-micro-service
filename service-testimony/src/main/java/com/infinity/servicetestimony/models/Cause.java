@@ -16,4 +16,5 @@ public class Cause {
     private String description;
 
     private String adminId;
+    private boolean deleted; // pour savoir si la cause est supprimé ou non
 }

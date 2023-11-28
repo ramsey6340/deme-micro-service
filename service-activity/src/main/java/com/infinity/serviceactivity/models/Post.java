@@ -20,9 +20,8 @@ public class Post {
 
     private String creationDate = LocalDate.now().toString(); // la date de création du post dans la base de donnée
 
-    @NotNull(message = "activityId ne doit pas être null")
     private String activityId;
 
-    @NotNull(message = "causeId ne doit pas être null")
-    private String causeId;
+    private boolean deleted = false; // si le post est supprimé
+
 }

@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +26,9 @@ public class OrganizationService {
         // Récuperer la liste des organizations
         Firestore db = FirestoreClient.getFirestore();
         try {
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                    .whereEqualTo("deleted", false)
+                    .get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             return documents.stream().map(document -> document.toObject(Organization.class)).toList();
 
@@ -71,7 +72,7 @@ public class OrganizationService {
                     organization.setImageUrl((String) userPatchInfo.getOrDefault("imageUrl", organization.getImageUrl()));
                     organization.setDeviceType((String) userPatchInfo.getOrDefault("deviceType", organization.getDeviceType()));
                     organization.setAnonymous((boolean) userPatchInfo.getOrDefault("isAnonymous", organization.isAnonymous()));
-                    organization.setDelete((boolean) userPatchInfo.getOrDefault("delete", organization.isDelete()));
+                    organization.setDeleted((boolean) userPatchInfo.getOrDefault("delete", organization.isDeleted()));
                     organization.setProfile((String) userPatchInfo.getOrDefault("profile", organization.getProfile()));
                     organization.setMatricule((String) userPatchInfo.getOrDefault("matricule", organization.getMatricule()));
                     organization.setNbSubscription((int) userPatchInfo.getOrDefault("nbSubscription", organization.getNbSubscription()));

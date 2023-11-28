@@ -3,6 +3,8 @@ package com.infinity.servicecause.models;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 @Data
 public class Cause {
     private String causeId;
@@ -13,7 +15,10 @@ public class Cause {
     @NotNull(message = "L'image ne doit pas être null")
     private String imageUrl;
 
+    private String creationDate= LocalDate.now().toString();
     private String description;
 
     private String adminId;
+
+    private boolean deleted; // pour savoir si la cause est supprimé ou non
 }

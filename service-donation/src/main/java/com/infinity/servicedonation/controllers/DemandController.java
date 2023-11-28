@@ -3,6 +3,7 @@ package com.infinity.servicedonation.controllers;
 import com.infinity.servicedonation.models.Demand;
 import com.infinity.servicedonation.services.DemandService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,16 +18,21 @@ public class DemandController {
     @Autowired
     private DemandService demandService;
 
-    @PostMapping("users/{userId}")
+    @PostMapping(value = "users/{userId}", params = {"causeId", "guarantorId"})
     @Operation(summary = "Crée une nouvelle demande par un user")
-    public ResponseEntity<String> createDemandByUser(@PathVariable String userId, @RequestBody Demand demand) {
-        return demandService.createDemandByUser(userId, demand);
+    public ResponseEntity<String> createDemandByUser(@PathVariable String userId,
+                                                     @RequestParam("causeId") String causeId,
+                                                     @RequestParam("guarantorId") String guarantorId,
+                                                     @Valid @RequestBody Demand demand) {
+        return demandService.createDemandByUser(userId, causeId, guarantorId, demand);
     }
 
-        @PostMapping("organizations/{organizationId}")
+    @PostMapping(value = "organizations/{organizationId}", params = "assignmentId")
     @Operation(summary = "Crée une nouvelle demande par une organisation")
-    public ResponseEntity<String> createDemandByOrganization(@PathVariable String organizationId, @RequestBody Demand demand) {
-        return demandService.createDemandByOrganization(organizationId, demand);
+    public ResponseEntity<String> createDemandByOrganization(@PathVariable String organizationId,
+                                                             @RequestParam String  assignmentId,
+                                                             @Valid @RequestBody Demand demand) {
+        return demandService.createDemandByOrganization(organizationId, assignmentId, demand);
     }
 
     @GetMapping("")
@@ -41,21 +47,45 @@ public class DemandController {
         return demandService.getDemandById(demandId);
     }
 
-    @PatchMapping("{demandId}")
+    @PatchMapping("organizations/{organizationId}/demands/{demandId}")
     @Operation(summary = "Mette à jour une demande")
-    public ResponseEntity<Demand> patchDemandInfo(@PathVariable String demandId, @RequestBody Map<String, Object> demandPatchInfo) {
-        return demandService.patchDemandInfo(demandId, demandPatchInfo);
+    public ResponseEntity<Demand> patchDemandInfoByOrganization(@PathVariable String organizationId,
+                                                                @PathVariable String demandId,
+                                                                @RequestBody Map<String, Object> demandPatchInfo) {
+        return demandService.patchDemandInfoByOrganization(organizationId, demandId, demandPatchInfo);
     }
 
-    @DeleteMapping("organizations/{organizationId}/{testimonyId}")
+    @PatchMapping("users/{userId}/demands/{demandId}")
+    @Operation(summary = "Mette à jour une demande")
+    public ResponseEntity<Demand> patchDemandInfoByUser(@PathVariable String userId,
+                                                        @PathVariable String demandId,
+                                                        @RequestBody Map<String, Object> demandPatchInfo) {
+        return demandService.patchDemandInfoByUser(userId, demandId, demandPatchInfo);
+    }
+
+    @DeleteMapping("organizations/{organizationId}/{demandId}")
     @Operation(summary = "Supprimer un temoignage par une organisation")
-    public ResponseEntity<String> deleteDemandByOrganization(@PathVariable String organizationId, @PathVariable String testimonyId) throws InterruptedException {
-        return demandService.deleteDemandByOrganization(organizationId, testimonyId);
+    public ResponseEntity<String> deleteDemandByOrganization(@PathVariable String organizationId,
+                                                             @PathVariable String demandId) throws InterruptedException {
+        return demandService.deleteDemandByOrganization(organizationId, demandId);
     }
 
-    @DeleteMapping("users/{userId}/{testimonyId}")
+    @DeleteMapping("users/{userId}/{demandId}")
     @Operation(summary = "Supprimer un temoignage par un user simple")
-    public ResponseEntity<String> deleteDemandByUser(@PathVariable String userId, @PathVariable String testimonyId) throws InterruptedException {
-        return demandService.deleteDemandByUser(userId, testimonyId);
+    public ResponseEntity<String> deleteDemandByUser(@PathVariable String userId,
+                                                     @PathVariable String demandId) throws InterruptedException {
+        return demandService.deleteDemandByUser(userId, demandId);
+    }
+
+    @GetMapping("users/{userId}/demands")
+    @Operation(summary = "Récuperer les demandes d'un user")
+    public List<Demand> getAllDemandsForUser(@PathVariable String userId) {
+        return demandService.getAllDemandsForUser(userId);
+    }
+
+    @GetMapping("organizations/{organizationId}/demands")
+    @Operation(summary = "Récuperer les demandes d'une organisation")
+    public List<Demand> getAllDemandsForOrganization(@PathVariable String organizationId) {
+        return demandService.getAllDemandsForOrganization(organizationId);
     }
 }

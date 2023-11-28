@@ -1,4 +1,4 @@
-package com.infinity.serviceactivity.models;
+package com.infinity.servicedonation.models;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

@@ -6,15 +6,8 @@ import com.google.firebase.cloud.FirestoreClient;
 import com.infinity.servicedonation.exceptions.BadRequestException;
 import com.infinity.servicedonation.exceptions.InternalServerException;
 import com.infinity.servicedonation.exceptions.NotFoundException;
-import com.infinity.servicedonation.feign.CauseServiceRestClient;
-import com.infinity.servicedonation.feign.OrganizationServiceRestClient;
-import com.infinity.servicedonation.feign.UserServiceRestClient;
-import com.infinity.servicedonation.models.Cause;
+import com.infinity.servicedonation.models.Assignment;
 import com.infinity.servicedonation.models.Demand;
-import com.infinity.servicedonation.models.Organization;
-import com.infinity.servicedonation.models.User;
-import com.infinity.servicetestimony.models.Testimony;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -28,18 +21,17 @@ import java.util.Map;
 public class DemandService {
 
     public static final String COLLECTION_NAME = "demands";
-    @Autowired
-    private UserServiceRestClient userServiceRestClient;
-    @Autowired
-    private CauseServiceRestClient causeServiceRestClient;
-    @Autowired
-    private OrganizationServiceRestClient organizationServiceRestClient;
-
+    public static final String ORGANIZATION_COLLECTION_NAME = "organizations";
+    public static final String USER_COLLECTION_NAME = "users";
+    public static final String CAUSE_COLLECTION_NAME = "causes";
+    public static final String ASSIGNMENT_COLLECTION_NAME = "assignments";
     public List<Demand> getAllDemands() {
         Firestore db = FirestoreClient.getFirestore();
 
         try {
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).orderBy("creationDate", Query.Direction.DESCENDING).get();
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                    .whereEqualTo("deleted", false)
+                    .orderBy("creationDate", Query.Direction.DESCENDING).get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             return documents.stream().map(document -> document.toObject(Demand.class)).toList();
 
@@ -67,22 +59,41 @@ public class DemandService {
         }
     }
 
-    public ResponseEntity<Demand> patchDemandInfo(String demandId, Map<String, Object> demandPatchInfo) {
+    public ResponseEntity<Demand> patchDemandInfoByOrganization(String organizationId, String demandId, Map<String, Object> demandPatchInfo) {
         // Mise à jour des informations d'une demande
         try {
             ResponseEntity<Demand> responseEntity = getDemandById(demandId);
             if(responseEntity.getStatusCode() == HttpStatus.OK) {
                 Demand demand = responseEntity.getBody();
                 if (demand != null){
-                    demand.setDescription((String) demandPatchInfo.getOrDefault("description", demand.getDescription()));
-                    demand.setVideoUrl((String) demandPatchInfo.getOrDefault("videoUrl", demand.getVideoUrl()));
-                    demand.setImageUrl((String) demandPatchInfo.getOrDefault("imageUrl", demand.getImageUrl()));
-                    demand.setCauseId((String) demandPatchInfo.getOrDefault("CauseId", demand.getCauseId()));
-                    demand.setActive((boolean) demandPatchInfo.getOrDefault("active", demand.isActive()));
-                    demand.setGuarantorId((String) demandPatchInfo.getOrDefault("guarantorId", demand.getGuarantorId()));
-
-                    // Enregistrement de la modification dans la base de données
-                    return updateDemand(demand, demandId);
+                    if (demand.getOrganizationId().equals(organizationId)){
+                        // Enregistrement de la modification dans la base de données
+                        return updateDemand(demandPatchInfo, demandId);
+                    }
+                    else{
+                        throw new BadRequestException("Cette organisation n'est pas autorisé pas modifier cette demande");
+                    }
+                }
+            }
+            throw new NotFoundException("Demande non trouvé");
+        }catch (Exception e) {
+            throw new InternalServerException(e.getMessage());
+        }
+    }
+    public ResponseEntity<Demand> patchDemandInfoByUser(String userId, String demandId, Map<String, Object> demandPatchInfo) {
+        // Mise à jour des informations d'une demande
+        try {
+            ResponseEntity<Demand> responseEntity = getDemandById(demandId);
+            if(responseEntity.getStatusCode() == HttpStatus.OK) {
+                Demand demand = responseEntity.getBody();
+                if (demand != null){
+                    if(demand.getUserId().equals(userId)){
+                        // Enregistrement de la modification dans la base de données
+                        return updateDemand(demandPatchInfo, demandId);
+                    }
+                    else {
+                        throw new BadRequestException("Ce user n'est pas autorisé pas modifier cette demande");
+                    }
                 }
             }
             throw new NotFoundException("Demande non trouvé");
@@ -91,13 +102,21 @@ public class DemandService {
         }
     }
 
-    public ResponseEntity<Demand> updateDemand(Demand demand, String demandId) {
+    public ResponseEntity<Demand> updateDemand(Map<String, Object> demandPatchInfo, String demandId) {
         Firestore db = FirestoreClient.getFirestore();
         try {
             ResponseEntity<Demand> responseEntity = getDemandById(demandId);
             if (responseEntity.getStatusCode() == HttpStatus.OK){
-                Demand demandExist = responseEntity.getBody();
-                if(demandExist != null){
+                Demand demand = responseEntity.getBody();
+                if(demand != null){
+                    demand.setDescription((String) demandPatchInfo.getOrDefault("description", demand.getDescription()));
+                    demand.setVideoUrl((String) demandPatchInfo.getOrDefault("videoUrl", demand.getVideoUrl()));
+                    demand.setImageUrl((String) demandPatchInfo.getOrDefault("imageUrl", demand.getImageUrl()));
+                    demand.setCauseId((String) demandPatchInfo.getOrDefault("CauseId", demand.getCauseId()));
+                    demand.setActive((boolean) demandPatchInfo.getOrDefault("active", demand.isActive()));
+                    demand.setGuarantorId((String) demandPatchInfo.getOrDefault("guarantorId", demand.getGuarantorId()));
+
+
                     db.collection(COLLECTION_NAME).document(demand.getDemandId()).set(demand);
                     return ResponseEntity.ok(demand);
                 }
@@ -108,19 +127,30 @@ public class DemandService {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    public ResponseEntity<String> createDemandByOrganization(String organizationId, Demand demand) {
+    public ResponseEntity<String> createDemandByOrganization(String organizationId,
+                                                             String assignmentId,
+                                                             Demand demand) {
         Firestore db = FirestoreClient.getFirestore();
         try {
-            ResponseEntity<Cause> responseEntityCause = causeServiceRestClient.getCauseById(demand.getCauseId());
-            if(responseEntityCause.getStatusCode() == HttpStatus.OK) {
-                ResponseEntity<Organization> responseEntityOrganization = organizationServiceRestClient.getOrganizationById(organizationId);
-                if (responseEntityOrganization.getStatusCode() == HttpStatus.OK && demand.getUserId() == null){
+            DocumentReference docRefOrganization = db.collection(ORGANIZATION_COLLECTION_NAME).document(organizationId);
+            if(docRefOrganization.get().get().exists()){
+                DocumentReference docRefAssignment = db.collection(ASSIGNMENT_COLLECTION_NAME).document(assignmentId);
+                if(docRefAssignment.get().get().exists()){
+                    Assignment  assignment = docRefAssignment.get().get().toObject(Assignment.class);
+
+                    demand.setGuarantorId(organizationId);
+                    demand.setCauseId(assignment.getCauseId());
+                    demand.setUserId(null);
+                    demand.setOrganizationId(organizationId);
                     return createDemand(demand);
                 }
-                throw new BadRequestException("Impossible de créer ce temoignage: problème au niveau de l'organisation ou de l'utilisateur");
+                else{
+                    throw new NotFoundException("Mission non trouvé");
+                }
             }
-            throw new NotFoundException("La cause spécifier est incorrecte");
-
+            else{
+                throw new NotFoundException("Organisation non trouvé");
+            }
         } catch (Exception e) {
             throw new InternalServerException(e.getMessage());
         }
@@ -148,92 +178,158 @@ public class DemandService {
         }
     }
 
-    public ResponseEntity<String> createDemandByUser(String userId, Demand demand) {
+    public ResponseEntity<String> createDemandByUser(String userId,
+                                                     String causeId,
+                                                     String guarantorId,
+                                                     Demand demand) {
         Firestore db = FirestoreClient.getFirestore();
         try {
-            ResponseEntity<Cause> responseEntityCause = causeServiceRestClient.getCauseById(demand.getCauseId());
-            if(responseEntityCause.getStatusCode() == HttpStatus.OK) {
-                ResponseEntity<User> responseEntityUser = userServiceRestClient.getUserById(userId);
-                if (responseEntityUser.getStatusCode() == HttpStatus.OK && demand.getOrganizationId() == null){
-                    return createDemand(demand);
+            DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
+            if(docRefUser.get().get().exists()){
+                DocumentReference docRefCause = db.collection(CAUSE_COLLECTION_NAME).document(causeId);
+                if(docRefCause.get().get().exists()){
+                    DocumentReference docRefOrganisation = db.collection(ORGANIZATION_COLLECTION_NAME).document(guarantorId);
+                    if(docRefOrganisation.get().get().exists()){
+                        demand.setGuarantorId(guarantorId);
+                        demand.setCauseId(causeId);
+                        demand.setUserId(userId);
+                        demand.setOrganizationId(null);
+                        return createDemand(demand);
+                    }
+                    else{
+                        throw new NotFoundException("Organisation non trouvé");
+                    }
                 }
-                throw new BadRequestException("Impossible de créer cette demande: problème au niveau de l'organisation ou de l'utilisateur");
+                else{
+                    throw new NotFoundException("Cause non trouvé");
+                }
             }
-            throw new NotFoundException("La cause spécifier est incorrecte");
-
+            else{
+                throw new NotFoundException("User non trouvé");
+            }
         } catch (Exception e) {
             throw new InternalServerException(e.getMessage());
         }
     }
 
-    public ResponseEntity<String> deleteDemandByOrganization(String organizationId, String testimonyId) throws InterruptedException {
+    public ResponseEntity<String> deleteDemandByOrganization(String organizationId, String demandId) throws InterruptedException {
         Firestore db = FirestoreClient.getFirestore();
 
         try {
-            ResponseEntity<Organization> responseEntity = organizationServiceRestClient.getOrganizationById(organizationId);
-            if(responseEntity.getStatusCode() == HttpStatus.OK) {
-                ResponseEntity<Demand> responseEntityDemand  = getDemandById(testimonyId);
+            DocumentReference docRefOrganization = db.collection(ORGANIZATION_COLLECTION_NAME).document(organizationId);
+
+            if(docRefOrganization.get().get().exists()) {
+                ResponseEntity<Demand> responseEntityDemand  = getDemandById(demandId);
                 if(responseEntityDemand.getStatusCode() == HttpStatus.OK){
                     Demand demand = responseEntityDemand.getBody();
                     if(demand.getOrganizationId() != null) {
                         if(demand.getOrganizationId().equals(organizationId)) {
-                            ApiFuture<WriteResult> writeResult = db.collection(COLLECTION_NAME).document(testimonyId).delete();
-                            return ResponseEntity.ok(testimonyId);
+                            DocumentReference docRefDemand = db.collection(COLLECTION_NAME).document(demandId);
+                            docRefDemand.update("deleted", true);
+                            return ResponseEntity.ok(demandId);
                         }
                         else{
-                            throw new com.infinity.servicetestimony.exceptions.BadRequestException("Vous n'ête pas autorisé à supprimer cette demande");
+                            throw new BadRequestException("Vous n'ête pas autorisé à supprimer cette demande");
                         }
                     }
                     else{
-                        throw new com.infinity.servicetestimony.exceptions.NotFoundException("Cet organisation n'a pas créer cette demande");
+                        throw new NotFoundException("Cet organisation n'a pas créer cette demande");
                     }
                 }
                 else{
-                    throw new com.infinity.servicetestimony.exceptions.NotFoundException("Cette demande n'existe pas");
+                    throw new NotFoundException("Cette demande n'existe pas");
                 }
             }
             else{
-                throw new com.infinity.servicetestimony.exceptions.NotFoundException("Cet organisation n'existe pas");
+                throw new NotFoundException("Cet organisation n'existe pas");
             }
         }
         catch (Exception e) {
-            throw new com.infinity.servicetestimony.exceptions.InternalServerException(e.getMessage());
+            throw new InternalServerException(e.getMessage());
         }
     }
-    public ResponseEntity<String> deleteDemandByUser(String userId, String testimonyId) throws InterruptedException {
+    public ResponseEntity<String> deleteDemandByUser(String userId, String demandId) throws InterruptedException {
         Firestore db = FirestoreClient.getFirestore();
 
         try {
-            ResponseEntity<User> responseEntity = userServiceRestClient.getUserById(userId);
-            if(responseEntity.getStatusCode() == HttpStatus.OK) {
-                ResponseEntity<Demand> responseEntityDemand  = getDemandById(testimonyId);
+            DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
+
+            if(docRefUser.get().get().exists()) {
+                ResponseEntity<Demand> responseEntityDemand  = getDemandById(demandId);
                 if(responseEntityDemand.getStatusCode() == HttpStatus.OK){
                     Demand demand = responseEntityDemand.getBody();
                     if(demand.getUserId() != null) {
-                        if(demand.getOrganizationId().equals(userId)) {
-                            ApiFuture<WriteResult> writeResult = db.collection(COLLECTION_NAME).document(testimonyId).delete();
-                            return ResponseEntity.ok(testimonyId);
+                        if(demand.getUserId().equals(userId)) {
+                            DocumentReference docRefDemand = db.collection(COLLECTION_NAME).document(demandId);
+                            docRefDemand.update("deleted", true);
+                            return ResponseEntity.ok(demandId);
                         }
                         else{
-                            throw new com.infinity.servicetestimony.exceptions.BadRequestException("Vous n'ête pas autorisé à supprimer cette demande");
+                            throw new BadRequestException("Vous n'ête pas autorisé à supprimer cette demande");
                         }
                     }
                     else{
-                        throw new com.infinity.servicetestimony.exceptions.NotFoundException("Cet organisation n'a pas créer cette demande");
+                        throw new NotFoundException("Cette demande n'a pas été créée par ce user");
                     }
                 }
                 else{
-                    throw new com.infinity.servicetestimony.exceptions.NotFoundException("Cet temoignage n'existe pas");
+                    throw new NotFoundException("Cette demande n'existe pas");
                 }
             }
             else{
-                throw new com.infinity.servicetestimony.exceptions.NotFoundException("Cet utilisateur n'existe pas");
+                throw new NotFoundException("Cet user n'existe pas");
             }
         }
         catch (Exception e) {
-            throw new com.infinity.servicetestimony.exceptions.InternalServerException(e.getMessage());
+            throw new InternalServerException(e.getMessage());
         }
     }
 
 
+    public List<Demand> getAllDemandsForUser(String userId) {
+        Firestore db = FirestoreClient.getFirestore();
+
+        try {
+            DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
+
+            if(docRefUser.get().get().exists()){
+                ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                        .whereEqualTo("deleted", false)
+                        .whereEqualTo("userId", userId)
+                        .orderBy("creationDate", Query.Direction.DESCENDING).get();
+
+                List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+                return documents.stream().map(document -> document.toObject(Demand.class)).toList();
+            }
+            else {
+                throw new NotFoundException("User non trouvé");
+            }
+
+        }catch (Exception e){
+            throw new InternalServerException(e.getMessage());
+        }
+    }
+    public List<Demand> getAllDemandsForOrganization(String organizationId) {
+        Firestore db = FirestoreClient.getFirestore();
+
+        try {
+            DocumentReference docRefUser = db.collection(ORGANIZATION_COLLECTION_NAME).document(organizationId);
+
+            if(docRefUser.get().get().exists()){
+                ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                        .whereEqualTo("deleted", false)
+                        .whereEqualTo("organizationId", organizationId)
+                        .orderBy("creationDate", Query.Direction.DESCENDING).get();
+
+                List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+                return documents.stream().map(document -> document.toObject(Demand.class)).toList();
+            }
+            else {
+                throw new NotFoundException("Organisation non trouvé");
+            }
+
+        }catch (Exception e){
+            throw new InternalServerException(e.getMessage());
+        }
+    }
 }

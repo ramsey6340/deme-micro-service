@@ -2,9 +2,6 @@ package com.infinity.serviceuser.services;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
 import com.infinity.serviceuser.exceptions.InternalServerException;
 import com.infinity.serviceuser.exceptions.NotFoundException;
@@ -13,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -75,7 +71,7 @@ public class UserService {
                     user.setImageUrl((String) userPatchInfo.getOrDefault("imageUrl", user.getImageUrl()));
                     user.setDeviceType((String) userPatchInfo.getOrDefault("deviceType", user.getDeviceType()));
                     user.setAnonymous((boolean) userPatchInfo.getOrDefault("isAnonymous", user.isAnonymous()));
-                    user.setDelete((boolean) userPatchInfo.getOrDefault("delete", user.isDelete()));
+                    user.setDeleted((boolean) userPatchInfo.getOrDefault("delete", user.isDeleted()));
                     user.setProfile((String) userPatchInfo.getOrDefault("profile", user.getProfile()));
                     user.setGender((String) userPatchInfo.getOrDefault("gender", user.getGender()));
 
@@ -97,7 +93,9 @@ public class UserService {
         // Récuperer la  liste des utilisateurs
         Firestore db = FirestoreClient.getFirestore();
         try {
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                    .whereEqualTo("deleted", false)
+                    .get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             return documents.stream().map(document -> document.toObject(User.class)).toList();
 

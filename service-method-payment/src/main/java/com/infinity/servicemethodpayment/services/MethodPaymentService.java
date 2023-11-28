@@ -22,7 +22,10 @@ public class MethodPaymentService {
         Firestore db = FirestoreClient.getFirestore();
 
         try {
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).get();
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                    .whereEqualTo("deleted", false)
+                    .get();
+
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             return documents.stream().map(document -> document.toObject(MethodPayment.class)).toList();
 

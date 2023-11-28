@@ -4,6 +4,7 @@ import com.infinity.serviceactivity.models.Activity;
 import com.infinity.serviceactivity.models.Post;
 import com.infinity.serviceactivity.services.ActivityService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,12 @@ public class ActivityController {
 
     @Autowired
     private ActivityService activityService;
+
+    @PostMapping(value = "organizations/{organizationId}/activities", params = {"assigmentId"})
+    @Operation(summary = "Ajouter une activité")
+    public ResponseEntity<String> createActivity(@PathVariable String organizationId, @RequestParam String assigmentId, @Valid @RequestBody Activity activity) {
+        return activityService.createActivity(organizationId, assigmentId, activity);
+    }
 
     @Operation(summary = "Récuperer tous les activités")
     @GetMapping("")
@@ -39,9 +46,14 @@ public class ActivityController {
     }
 
     @Operation(summary = "Modifier les données d'une activitée")
-    @PatchMapping(value = "{activityId}")
-    public ResponseEntity<Activity> patchActivityInfo(@PathVariable String activityId, @RequestBody Map<String, Object> activityPatchInfo) throws ExecutionException, InterruptedException {
-        return activityService.patchActivityInfo(activityId, activityPatchInfo);
+    @PatchMapping(value = "organizations/{organizationId}/activities/{activityId}")
+    public ResponseEntity<Activity> patchActivityInfo(@PathVariable String organizationId, @PathVariable String activityId, @RequestBody Map<String, Object> activityPatchInfo) throws ExecutionException, InterruptedException {
+        return activityService.patchActivityInfo(organizationId, activityId, activityPatchInfo);
     }
 
+    @DeleteMapping("organizations/{organizationId}/activities/{activityId}")
+    @Operation(summary = "Supprimer une activité")
+    public ResponseEntity<String> deleteActivity(@PathVariable String organizationId, @PathVariable String activityId) {
+        return activityService.deleteActivity(organizationId, activityId);
+    }
 }

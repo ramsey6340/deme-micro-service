@@ -42,7 +42,9 @@ public class TestimonyService {
         Firestore db = FirestoreClient.getFirestore();
 
         try {
-            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME).orderBy("creationDate", Query.Direction.DESCENDING).get();
+            ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                    .whereEqualTo("deleted", false)
+                    .orderBy("creationDate", Query.Direction.DESCENDING).get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             return documents.stream().map(document -> document.toObject(Testimony.class)).toList();
 

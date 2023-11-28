@@ -14,6 +14,9 @@ public class Cause {
     private String imageUrl;
 
     private String description;
+    private String creationDate;
 
     private String adminId;
+
+    private boolean deleted;
 }
