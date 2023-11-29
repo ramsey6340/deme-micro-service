@@ -48,7 +48,7 @@ public class GiveDonationController {
     }
 
     @PostMapping("financial/users/{userId}/to/demands/{beneficiaryId}")
-    @Operation(summary = "Une organisation va faire un don financier à une demande")
+    @Operation(summary = "Un user va faire un don financier à une demande")
     public ResponseEntity<FinancialDonation> createFinancialDonationByUserToDemand(
             @PathVariable String userId,
             @PathVariable String beneficiaryId,

@@ -63,7 +63,7 @@ public class PostController {
         return postService.deletePost(organizationId, postId);
     }
 
-    @GetMapping(value = "organizations/{organizationId}/posts/")
+    @GetMapping(value = "organizations/{organizationId}/posts")
     @Operation(summary = "Récupérer les posts d'une organisation")
     public List<Post> getAllPostsForOrganization(@PathVariable String organizationId) {
         return postService.getAllPostsForOrganization(organizationId);

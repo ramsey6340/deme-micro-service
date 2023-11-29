@@ -22,26 +22,28 @@ import java.util.List;
 @Service
 public class GiveDonationService {
     public static final String COLLECTION_NAME = "donations";
-    @Autowired
-    private OrganizationServiceRestClient organizationServiceRestClient;
-    @Autowired
-    private MethodPaymentServiceRestClient methodPaymentServiceRestClient;
-    @Autowired
-    private UserServiceRestClient userServiceRestClient;
+    public static final String ORGANIZATION_COLLECTION_NAME = "organizations";
+    public static final String METHOD_PAYMENT_COLLECTION_NAME = "methodPayments";
+    public static final String DEMAND_COLLECTION_NAME = "demands";
+    public static final String USER_COLLECTION_NAME = "users";
+
 
     public ResponseEntity<FinancialDonation> createFinancialDonationByOrganizationToOrganization(
             String organizationId, String beneficiaryId, FinancialDonation financialDonation)    {
         try{
             Firestore db = FirestoreClient.getFirestore();
-            ResponseEntity<Organization> organizationResponseEntity = organizationServiceRestClient.getOrganizationById(organizationId);
-            if(organizationResponseEntity.getStatusCode() == HttpStatus.OK && !organizationId.equals(beneficiaryId)) {
+            DocumentReference docRefOrganization = db.collection(ORGANIZATION_COLLECTION_NAME).document(organizationId);
+
+            if(docRefOrganization.get().get().exists() && !organizationId.equals(beneficiaryId)) {
                 financialDonation.setDonorOrganizationId(organizationId);
                 financialDonation.setDonorUserId(null);
-                 ResponseEntity<MethodPayment> methodPaymentResponseEntity = methodPaymentServiceRestClient.getMethodPaymentById(financialDonation.getMethodPaymentId());
-                 if(methodPaymentResponseEntity.getStatusCode() ==  HttpStatus.OK) {
+                DocumentReference docRefMethodPayment = db.collection(METHOD_PAYMENT_COLLECTION_NAME).document(financialDonation.getMethodPaymentId());
+
+                if(docRefMethodPayment.get().get().exists()) {
                      if(financialDonation.getAmount() > 0) {
-                         ResponseEntity<Organization> beneficiaryResponseEntity = organizationServiceRestClient.getOrganizationById(beneficiaryId);
-                         if(beneficiaryResponseEntity.getStatusCode() == HttpStatus.OK) {
+                         DocumentReference docRefBeneficiary = db.collection(ORGANIZATION_COLLECTION_NAME).document(beneficiaryId);
+
+                         if(docRefBeneficiary.get().get().exists()) {
                              financialDonation.setBeneficiaryOrganizationId(beneficiaryId);
                              financialDonation.setBeneficiaryDemandId(null);
 
@@ -70,15 +72,18 @@ public class GiveDonationService {
     public ResponseEntity<FinancialDonation> createFinancialDonationByOrganizationToDemand(
             String organizationId, String beneficiaryId, FinancialDonation financialDonation) {
         try{
-            ResponseEntity<Organization> organizationResponseEntity = organizationServiceRestClient.getOrganizationById(organizationId);
-            if(organizationResponseEntity.getStatusCode() == HttpStatus.OK && !organizationId.equals(beneficiaryId)) {
+            Firestore db = FirestoreClient.getFirestore();
+
+            DocumentReference docRefOrganization = db.collection(ORGANIZATION_COLLECTION_NAME).document(organizationId);
+            if(docRefOrganization.get().get().exists() && !organizationId.equals(beneficiaryId)) {
                 financialDonation.setDonorOrganizationId(organizationId);
                 financialDonation.setDonorUserId(null);
-                ResponseEntity<MethodPayment> methodPaymentResponseEntity = methodPaymentServiceRestClient.getMethodPaymentById(financialDonation.getMethodPaymentId());
-                if(methodPaymentResponseEntity.getStatusCode() ==  HttpStatus.OK) {
+
+                DocumentReference docRefMethodPayment = db.collection(METHOD_PAYMENT_COLLECTION_NAME).document(financialDonation.getMethodPaymentId());
+                if(docRefMethodPayment.get().get().exists()) {
                     if(financialDonation.getAmount() > 0) {
-                        ResponseEntity<Organization> beneficiaryResponseEntity = organizationServiceRestClient.getOrganizationById(beneficiaryId);
-                        if(beneficiaryResponseEntity.getStatusCode() == HttpStatus.OK) {
+                        DocumentReference docRefDemand = db.collection(DEMAND_COLLECTION_NAME).document(beneficiaryId);
+                        if(docRefDemand.get().get().exists()) {
                             financialDonation.setBeneficiaryOrganizationId(null);
                             financialDonation.setBeneficiaryDemandId(beneficiaryId);
 
@@ -139,15 +144,16 @@ public class GiveDonationService {
 
     public ResponseEntity<FinancialDonation> createFinancialDonationByUserToOrganization(String userId, String beneficiaryId, FinancialDonation financialDonation) {
         try{
-            ResponseEntity<User> userResponseEntity = userServiceRestClient.getUserById(userId);
-            if(userResponseEntity.getStatusCode() == HttpStatus.OK && !userId.equals(beneficiaryId)) {
+            Firestore db = FirestoreClient.getFirestore();
+            DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
+            if(docRefUser.get().get().exists() && !userId.equals(beneficiaryId)) {
                 financialDonation.setDonorUserId(userId);
                 financialDonation.setDonorOrganizationId(null);
-                ResponseEntity<MethodPayment> methodPaymentResponseEntity = methodPaymentServiceRestClient.getMethodPaymentById(financialDonation.getMethodPaymentId());
-                if(methodPaymentResponseEntity.getStatusCode() ==  HttpStatus.OK) {
+                DocumentReference docRefMethodPayment = db.collection(METHOD_PAYMENT_COLLECTION_NAME).document(financialDonation.getMethodPaymentId());
+                if(docRefMethodPayment.get().get().exists()) {
                     if(financialDonation.getAmount() > 0) {
-                        ResponseEntity<Organization> beneficiaryResponseEntity = organizationServiceRestClient.getOrganizationById(beneficiaryId);
-                        if(beneficiaryResponseEntity.getStatusCode() == HttpStatus.OK) {
+                        DocumentReference docRefBeneficiary = db.collection(ORGANIZATION_COLLECTION_NAME).document(beneficiaryId);
+                        if(docRefBeneficiary.get().get().exists()) {
                             financialDonation.setBeneficiaryOrganizationId(beneficiaryId);
                             financialDonation.setBeneficiaryDemandId(null);
 
@@ -176,15 +182,15 @@ public class GiveDonationService {
     public ResponseEntity<FinancialDonation> createFinancialDonationByUserToDemand(String userId, String beneficiaryId, FinancialDonation financialDonation) {
         try{
             Firestore db = FirestoreClient.getFirestore();
-            ResponseEntity<User> userResponseEntity = userServiceRestClient.getUserById(userId);
-            if(userResponseEntity.getStatusCode() == HttpStatus.OK && !userId.equals(beneficiaryId)) {
+            DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
+            if(docRefUser.get().get().exists() && !userId.equals(beneficiaryId)) {
                 financialDonation.setDonorUserId(userId);
                 financialDonation.setDonorOrganizationId(null);
-                ResponseEntity<MethodPayment> methodPaymentResponseEntity = methodPaymentServiceRestClient.getMethodPaymentById(financialDonation.getMethodPaymentId());
-                if(methodPaymentResponseEntity.getStatusCode() ==  HttpStatus.OK) {
+                DocumentReference docRefMethodPayment = db.collection(METHOD_PAYMENT_COLLECTION_NAME).document(financialDonation.getMethodPaymentId());
+                if(docRefMethodPayment.get().get().exists()) {
                     if(financialDonation.getAmount() > 0) {
-                        ResponseEntity<Organization> beneficiaryResponseEntity = organizationServiceRestClient.getOrganizationById(beneficiaryId);
-                        if(beneficiaryResponseEntity.getStatusCode() == HttpStatus.OK) {
+                        DocumentReference docRefDemand = db.collection(DEMAND_COLLECTION_NAME).document(beneficiaryId);
+                        if(docRefDemand.get().get().exists()) {
                             financialDonation.setBeneficiaryOrganizationId(null);
                             financialDonation.setBeneficiaryDemandId(beneficiaryId);
 
@@ -216,13 +222,14 @@ public class GiveDonationService {
             String userId, String beneficiaryId, MaterialDonation materialDonation) {
 
         try{
-            ResponseEntity<User> userResponseEntity = userServiceRestClient.getUserById(userId);
-            if(userResponseEntity.getStatusCode() == HttpStatus.OK && !userId.equals(beneficiaryId)) {
+            Firestore db = FirestoreClient.getFirestore();
+            DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
+            if(docRefUser.get().get().exists() && !userId.equals(beneficiaryId)) {
                 materialDonation.setDonorUserId(userId);
                 materialDonation.setDonorOrganizationId(null);
                 if(!materialDonation.getDescriptionMaterialDonation().isEmpty()) {
-                    ResponseEntity<Organization> beneficiaryResponseEntity = organizationServiceRestClient.getOrganizationById(beneficiaryId);
-                    if(beneficiaryResponseEntity.getStatusCode() == HttpStatus.OK) {
+                    DocumentReference docRefDemand = db.collection(DEMAND_COLLECTION_NAME).document(beneficiaryId);
+                    if(docRefDemand.get().get().exists()) {
                         materialDonation.setBeneficiaryOrganizationId(null);
                         materialDonation.setBeneficiaryDemandId(beneficiaryId);
 
@@ -246,17 +253,18 @@ public class GiveDonationService {
 
     public ResponseEntity<MaterialDonation> createMaterialDonationByOrganizationToOrganization(String organizationId, String beneficiaryId, MaterialDonation materialDonation) {
         try{
-            ResponseEntity<Organization> organizationResponseEntity = organizationServiceRestClient.getOrganizationById(organizationId);
-            if(organizationResponseEntity.getStatusCode() == HttpStatus.OK && !organizationId.equals(beneficiaryId)) {
+            Firestore db = FirestoreClient.getFirestore();
+
+            DocumentReference docRefOrganization = db.collection(ORGANIZATION_COLLECTION_NAME).document(organizationId);
+            if(docRefOrganization.get().get().exists() && !organizationId.equals(beneficiaryId)) {
                 materialDonation.setDonorOrganizationId(organizationId);
                 materialDonation.setDonorUserId(null);
                 if(!materialDonation.getDescriptionMaterialDonation().isEmpty()) {
-                    ResponseEntity<Organization> beneficiaryResponseEntity = organizationServiceRestClient.getOrganizationById(beneficiaryId);
-                    if(beneficiaryResponseEntity.getStatusCode() == HttpStatus.OK) {
+                    DocumentReference docRefBeneficiary = db.collection(ORGANIZATION_COLLECTION_NAME).document(beneficiaryId);
+                    if(docRefBeneficiary.get().get().exists()) {
                         materialDonation.setBeneficiaryOrganizationId(beneficiaryId);
                         materialDonation.setBeneficiaryDemandId(null);
 
-                        System.out.println("Je suis ici");
                         return createMaterialDonation(materialDonation);
                     }
                     else{
@@ -277,13 +285,15 @@ public class GiveDonationService {
 
     public ResponseEntity<MaterialDonation> createMaterialDonationByOrganizationToDemand(String organizationId, String beneficiaryId, MaterialDonation materialDonation) {
         try{
-            ResponseEntity<Organization> organizationResponseEntity = organizationServiceRestClient.getOrganizationById(organizationId);
-            if(organizationResponseEntity.getStatusCode() == HttpStatus.OK && !organizationId.equals(beneficiaryId)) {
+            Firestore db = FirestoreClient.getFirestore();
+
+            DocumentReference docRefOrganization = db.collection(ORGANIZATION_COLLECTION_NAME).document(organizationId);
+            if(docRefOrganization.get().get().exists() && !organizationId.equals(beneficiaryId)) {
                 materialDonation.setDonorOrganizationId(organizationId);
                 materialDonation.setDonorUserId(null);
                 if(!materialDonation.getDescriptionMaterialDonation().isEmpty()) {
-                    ResponseEntity<Organization> beneficiaryResponseEntity = organizationServiceRestClient.getOrganizationById(beneficiaryId);
-                    if(beneficiaryResponseEntity.getStatusCode() == HttpStatus.OK) {
+                    DocumentReference docRefDemand = db.collection(DEMAND_COLLECTION_NAME).document(beneficiaryId);
+                    if(docRefDemand.get().get().exists()) {
                         materialDonation.setBeneficiaryOrganizationId(null);
                         materialDonation.setBeneficiaryDemandId(beneficiaryId);
 
@@ -307,13 +317,14 @@ public class GiveDonationService {
 
     public ResponseEntity<MaterialDonation> createMaterialDonationByUserToOrganization(String userId, String beneficiaryId, MaterialDonation materialDonation) {
         try{
-            ResponseEntity<User> userResponseEntity = userServiceRestClient.getUserById(userId);
-            if(userResponseEntity.getStatusCode() == HttpStatus.OK && !userId.equals(beneficiaryId)) {
+            Firestore db = FirestoreClient.getFirestore();
+            DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
+            if(docRefUser.get().get().exists() && !userId.equals(beneficiaryId)) {
                 materialDonation.setDonorUserId(userId);
                 materialDonation.setDonorOrganizationId(null);
                 if(!materialDonation.getDescriptionMaterialDonation().isEmpty()) {
-                    ResponseEntity<Organization> beneficiaryResponseEntity = organizationServiceRestClient.getOrganizationById(beneficiaryId);
-                    if(beneficiaryResponseEntity.getStatusCode() == HttpStatus.OK) {
+                    DocumentReference docRefBeneficiary = db.collection(ORGANIZATION_COLLECTION_NAME).document(beneficiaryId);
+                    if(docRefBeneficiary.get().get().exists()) {
                         materialDonation.setBeneficiaryOrganizationId(beneficiaryId);
                         materialDonation.setBeneficiaryDemandId(null);
 

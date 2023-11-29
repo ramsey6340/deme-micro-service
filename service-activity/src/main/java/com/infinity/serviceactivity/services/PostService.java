@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -239,18 +240,21 @@ public class PostService {
         Firestore db = FirestoreClient.getFirestore();
         try {
             List<Assignment>  assignments = assignmentService.getAllAssignmentsByOrganizationId(organizationId);
+            List<String> assignmentIds = assignments.stream().map(Assignment::getAssignmentId).toList();
 
             ApiFuture<QuerySnapshot> futureActivity = db.collection(ACTIVITY_COLLECTION_NAME)
                     .whereEqualTo("deleted", false)
-                    .whereIn("assignmentId", assignments)
+                    .whereIn("assignmentId", assignmentIds)
                     .orderBy("creationDate", Query.Direction.DESCENDING).get();
             List<QueryDocumentSnapshot> documentsActivities = futureActivity.get().getDocuments();
             List<Activity> activities = documentsActivities.stream().map(document -> document.toObject(Activity.class)).toList();
 
+            List<String> activityIds = activities.stream().map(Activity::getActivityId).toList();
+
 
             ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
                     .whereEqualTo("deleted", false)
-                    .whereIn("activityId", activities)
+                    .whereIn("activityId", activityIds)
                     .orderBy("creationDate", Query.Direction.DESCENDING).get();
 
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
