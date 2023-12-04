@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 public class GatewayConfig {
 
     //@Bean
-    public RouteLocator routes(RouteLocatorBuilder builder){
+    /*public RouteLocator routes(RouteLocatorBuilder builder){
         return builder.routes()
                 .route(r->r.path("/api/v1/methodPayments/**").uri("lb://service-method-payment"))
                 .route(r->r.path("/api/v1/auth/**").uri("lb://service-auth"))
@@ -24,7 +24,7 @@ public class GatewayConfig {
                 .route(r->r.path("/api/v1/testimonies/**").uri("lb://service-testimony"))
                 .route(r->r.path("/api/v1/donations/**").uri("lb://service-donation"))
                 .build();
-    }
+    }*/
 
     @Bean
     DiscoveryClientRouteDefinitionLocator discoveryClientRouteDefinitionLocator(
