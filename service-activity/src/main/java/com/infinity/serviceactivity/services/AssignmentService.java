@@ -30,14 +30,18 @@ public class AssignmentService {
     public ResponseEntity<String> createAssignment(String organizationId, String causeId, Assignment assignment) {
         Firestore db = FirestoreClient.getFirestore();
         try{
-            // Vérification si la mission existe
             DocumentReference docRefOrganization = db.collection(ORGANIZATION_COLLECTION_NAME).document(organizationId);
             if(docRefOrganization.get().get().exists()){
                 DocumentReference docRefCause = db.collection(CAUSE_COLLECTION_NAME).document(causeId);
                 if(docRefCause.get().get().exists()){
+                    assignment.setOrganizationId(organizationId);
+                    assignment.setCauseId(causeId);
+
                     ApiFuture<DocumentReference> docRef = db.collection(COLLECTION_NAME).add(assignment);
                     assignment.setAssignmentId(docRef.get().getId());
                     docRef.get().update("assignmentId", assignment.getAssignmentId());
+                    docRef.get().update("cause", docRefCause);
+                    docRef.get().update("organization", docRefOrganization);
 
                     URI location = ServletUriComponentsBuilder.
                             fromCurrentContextPath().path("{assignmentId}").

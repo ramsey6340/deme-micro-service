@@ -20,7 +20,7 @@ public class GiveDonationController {
 
     @PostMapping("financial/organizations/{organizationId}/to/organizations/{beneficiaryId}")
     @Operation(summary = "Une organisation va faire un don financier à une organisation")
-    public ResponseEntity<FinancialDonation> createFinancialDonationByOrganizationToOrganization(
+    public ResponseEntity<String> createFinancialDonationByOrganizationToOrganization(
             @PathVariable String organizationId,
             @PathVariable String beneficiaryId,
             @Valid @RequestBody FinancialDonation financialDonation) {
@@ -29,7 +29,7 @@ public class GiveDonationController {
 
     @PostMapping("financial/organizations/{organizationId}/to/demands/{beneficiaryId}")
     @Operation(summary = "Une organisation va faire un don financier à une demande")
-    public ResponseEntity<FinancialDonation> createFinancialDonationByOrganizationToDemand(
+    public ResponseEntity<String> createFinancialDonationByOrganizationToDemand(
             @PathVariable String organizationId,
             @PathVariable String beneficiaryId,
             @Valid @RequestBody FinancialDonation financialDonation) {
@@ -40,7 +40,7 @@ public class GiveDonationController {
 
     @PostMapping("financial/users/{userId}/to/organizations/{beneficiaryId}")
     @Operation(summary = "Un user va faire un don financier à une organisation")
-    public ResponseEntity<FinancialDonation> createFinancialDonationByUserToOrganization(
+    public ResponseEntity<String> createFinancialDonationByUserToOrganization(
             @PathVariable String userId,
             @PathVariable String beneficiaryId,
             @Valid @RequestBody FinancialDonation financialDonation) {
@@ -49,7 +49,7 @@ public class GiveDonationController {
 
     @PostMapping("financial/users/{userId}/to/demands/{beneficiaryId}")
     @Operation(summary = "Un user va faire un don financier à une demande")
-    public ResponseEntity<FinancialDonation> createFinancialDonationByUserToDemand(
+    public ResponseEntity<String> createFinancialDonationByUserToDemand(
             @PathVariable String userId,
             @PathVariable String beneficiaryId,
             @Valid @RequestBody FinancialDonation financialDonation) {

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -138,11 +139,21 @@ public class DemandService {
                 if(docRefAssignment.get().get().exists()){
                     Assignment  assignment = docRefAssignment.get().get().toObject(Assignment.class);
 
+                    // Récuperation des réferences
+                    DocumentReference docRefCause = db.collection(CAUSE_COLLECTION_NAME).document(assignment.getCauseId());
+
+
                     demand.setGuarantorId(organizationId);
                     demand.setCauseId(assignment.getCauseId());
                     demand.setUserId(null);
                     demand.setOrganizationId(organizationId);
-                    return createDemand(demand);
+                    List<DocumentReference> docRefList = new ArrayList<>();
+                    docRefList.add(docRefCause);
+                    docRefList.add(docRefOrganization);
+                    docRefList.add(docRefOrganization);
+                    docRefList.add(null);
+
+                    return createDemand(demand, docRefList);
                 }
                 else{
                     throw new NotFoundException("Mission non trouvé");
@@ -156,7 +167,7 @@ public class DemandService {
         }
     }
 
-    public ResponseEntity<String> createDemand(Demand demand) {
+    public ResponseEntity<String> createDemand(Demand demand, List<DocumentReference> docRefList) {
         Firestore db = FirestoreClient.getFirestore();
         try {
             if((demand.getDescription() != null && !demand.getDescription().isEmpty()) | (demand.getVideoUrl()!=null && !demand.getVideoUrl().isEmpty())) {
@@ -165,6 +176,10 @@ public class DemandService {
 
                 DocumentReference updateDocRef = db.collection(COLLECTION_NAME).document(demand.getDemandId());
                 updateDocRef.update("demandId", demand.getDemandId());
+                updateDocRef.update("cause", docRefList.get(0));
+                updateDocRef.update("organization", docRefList.get(1));
+                updateDocRef.update("guarantor", docRefList.get(2));
+                updateDocRef.update("user", docRefList.get(3));
 
                 URI location = ServletUriComponentsBuilder.
                         fromCurrentContextPath().path("{demandId}").
@@ -188,13 +203,20 @@ public class DemandService {
             if(docRefUser.get().get().exists()){
                 DocumentReference docRefCause = db.collection(CAUSE_COLLECTION_NAME).document(causeId);
                 if(docRefCause.get().get().exists()){
-                    DocumentReference docRefOrganisation = db.collection(ORGANIZATION_COLLECTION_NAME).document(guarantorId);
-                    if(docRefOrganisation.get().get().exists()){
+                    DocumentReference docRefOrganization = db.collection(ORGANIZATION_COLLECTION_NAME).document(guarantorId);
+                    if(docRefOrganization.get().get().exists()){
                         demand.setGuarantorId(guarantorId);
                         demand.setCauseId(causeId);
                         demand.setUserId(userId);
                         demand.setOrganizationId(null);
-                        return createDemand(demand);
+
+                        List<DocumentReference> docRefList = new ArrayList<>();
+                        docRefList.add(docRefCause);
+                        docRefList.add(docRefOrganization);
+                        docRefList.add(null);
+                        docRefList.add(docRefUser);
+
+                        return createDemand(demand, docRefList);
                     }
                     else{
                         throw new NotFoundException("Organisation non trouvé");

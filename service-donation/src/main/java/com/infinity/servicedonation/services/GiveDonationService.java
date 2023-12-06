@@ -28,7 +28,7 @@ public class GiveDonationService {
     public static final String USER_COLLECTION_NAME = "users";
 
 
-    public ResponseEntity<FinancialDonation> createFinancialDonationByOrganizationToOrganization(
+    public ResponseEntity<String> createFinancialDonationByOrganizationToOrganization(
             String organizationId, String beneficiaryId, FinancialDonation financialDonation)    {
         try{
             Firestore db = FirestoreClient.getFirestore();
@@ -69,7 +69,7 @@ public class GiveDonationService {
         }
     }
 
-    public ResponseEntity<FinancialDonation> createFinancialDonationByOrganizationToDemand(
+    public ResponseEntity<String> createFinancialDonationByOrganizationToDemand(
             String organizationId, String beneficiaryId, FinancialDonation financialDonation) {
         try{
             Firestore db = FirestoreClient.getFirestore();
@@ -109,7 +109,7 @@ public class GiveDonationService {
         }
     }
 
-    public ResponseEntity<FinancialDonation> createFinancialDonation(FinancialDonation financialDonation) {
+    public ResponseEntity<String> createFinancialDonation(FinancialDonation financialDonation) {
         try{
             Firestore  db = FirestoreClient.getFirestore();
             ApiFuture<DocumentReference> docRef = db.collection(COLLECTION_NAME).add(financialDonation);
@@ -120,7 +120,7 @@ public class GiveDonationService {
             URI location = ServletUriComponentsBuilder.
                     fromCurrentContextPath().path("{donationId}").
                     buildAndExpand(financialDonation.getDonationId()).toUri();
-            return ResponseEntity.created(location).body(financialDonation);
+            return ResponseEntity.created(location).body(financialDonation.getDonationId());
         }catch (Exception e) {
             throw new InternalServerException(e.getMessage());
         }
@@ -142,7 +142,7 @@ public class GiveDonationService {
         }
     }
 
-    public ResponseEntity<FinancialDonation> createFinancialDonationByUserToOrganization(String userId, String beneficiaryId, FinancialDonation financialDonation) {
+    public ResponseEntity<String> createFinancialDonationByUserToOrganization(String userId, String beneficiaryId, FinancialDonation financialDonation) {
         try{
             Firestore db = FirestoreClient.getFirestore();
             DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
@@ -179,7 +179,7 @@ public class GiveDonationService {
         }
     }
 
-    public ResponseEntity<FinancialDonation> createFinancialDonationByUserToDemand(String userId, String beneficiaryId, FinancialDonation financialDonation) {
+    public ResponseEntity<String> createFinancialDonationByUserToDemand(String userId, String beneficiaryId, FinancialDonation financialDonation) {
         try{
             Firestore db = FirestoreClient.getFirestore();
             DocumentReference docRefUser = db.collection(USER_COLLECTION_NAME).document(userId);
